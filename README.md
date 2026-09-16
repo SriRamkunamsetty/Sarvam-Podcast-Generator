@@ -1,53 +1,79 @@
 # Podcast from README
 
-Paste a project README, get back a 2-host podcast clip. Sarvam's chat model
-writes a short conversational script about the project; Bulbul reads it
-aloud with two different voices; the clips are stitched into one MP3.
+<p align="center">
+  <img src="https://img.shields.io/badge/Sarvam%20AI-sarvam--105b%20%7C%20bulbul%3Av3-FF6B6B?style=for-the-badge&logo=ai&logoColor=white" alt="Sarvam AI" />
+  <img src="https://img.shields.io/badge/FastAPI-0.100%2B-009688?style=for-the-badge&logo=fastapi&logoColor=white" alt="FastAPI" />
+  <img src="https://img.shields.io/badge/Python-3.10%2B-blue?style=for-the-badge&logo=python&logoColor=white" alt="Python" />
+  <img src="https://img.shields.io/badge/Deploy%20with-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white" alt="Vercel" />
+</p>
 
-Built as part of a Sarvam AI build sprint.
+Paste a project README or documentation, and get back a **2-host conversational podcast clip** in your target language! Powered by Sarvam AI (`sarvam-105b` chat model and `bulbul:v3` text-to-speech engine).
 
-## How it works
+Built as part of the **Sarvam AI Build Sprint**.
+
+---
+
+## 🚀 Features
+
+- 🌐 **Multi-Language Generation:** Supports **9 Indian Languages** (`English`, `Hindi`, `Telugu`, `Tamil`, `Bengali`, `Kannada`, `Malayalam`, `Marathi`, `Gujarati`).
+- 🎙️ **Customizable Voice Cast:** Choose distinct voices for Host A (Curious) and Host B (Explainer) from Bulbul v3 speakers (`anushka`, `karun`, `meera`, `arvind`, `pavithra`, `hitesh`, `vidya`, `ratan`).
+- ⏱️ **Adjustable Duration & Pause:** Select target speaking length (*Short*, *Medium*, *Detailed*) and pause gaps between turns (100ms – 750ms).
+- 📻 **Instant MP3 Export:** Generates downloadable `.mp3` tracks stitched cleanly with `pydub`.
+- ⚡ **Zero-Build Frontend:** Lightweight static HTML5/CSS3/Vanilla JS single-page interface.
+
+---
+
+## 🛠️ Tech Stack
+
+| Component | Technology | Description |
+| :--- | :--- | :--- |
+| **LLM Model** | `sarvam-105b` | Writes natural 2-host dialogue scripts from raw README text |
+| **TTS Engine** | `bulbul:v3` | Synthesizes Indian English & regional language audio |
+| **Backend API** | `FastAPI` (Python 3.10+) | Handles script generation, TTS conversion, and audio stitching |
+| **Audio Processing**| `pydub` + `imageio-ffmpeg` | Concatenates turn clips with configurable silence gaps |
+| **Frontend UI** | HTML5 / CSS3 / Vanilla JS | Responsive interface with interactive control panel |
+| **Deployment** | Vercel Serverless Functions | Serverless deployment via `vercel.json` & `@vercel/python` |
+
+---
+
+## ⚡ How It Works
 
 ```
-README text
-     │
-     ▼
-Sarvam Chat Completions (sarvam-105b)  ──►  2-host script as JSON
-     │
-     ▼
-Bulbul TTS, once per line               ──►  one voice for Host A, another for Host B
-     │
-     ▼
-pydub stitches the clips together       ──►  single MP3, returned as base64
+README Text ──► Sarvam Chat (sarvam-105b) ──► 2-Host Script (JSON)
+                                                    │
+                                                    ▼
+MP3 Download ◄── pydub Audio Stitching ◄── Bulbul TTS (bulbul:v3)
 ```
 
-## Setup
+---
+
+## 💻 Local Setup
 
 ```bash
+# 1. Clone the repository
+git clone https://github.com/SriRamkunamsetty/Sarvam-Podcast-Generator.git
+cd Sarvam-Podcast-Generator
+
+# 2. Install backend dependencies
 cd backend
 pip install -r requirements.txt
-export SARVAM_API_KEY="your_key_here"
+
+# 3. Set your Sarvam AI API Key
+export SARVAM_API_KEY="your_api_key_here"
+
+# 4. Start the FastAPI backend
 uvicorn main:app --reload
 ```
 
-Then open `frontend/index.html`. No backend running? Click "Load an example
-README" and "Generate podcast" anyway — it'll show the script (using
-Scheme Sahayak's own README as the example) with a note that you need the
-backend running to hear the actual audio.
+Open `frontend/index.html` in your browser.
 
-## Notes
+---
 
-- Scripts are capped at roughly 45-75 seconds of speaking time by the system
-  prompt — long enough to be a real clip, short enough to generate in one
-  request.
-- The two voices are hardcoded (`anushka` for Host A, `karun` for Host B) in
-  `backend/main.py` — swap in any of Bulbul's 30+ speakers.
-- If the model's JSON response ever comes back wrapped in a code fence
-  despite the system prompt saying not to, `generate_script()` strips it
-  before parsing — LLMs don't always follow formatting instructions exactly.
+## 🌐 Vercel Deployment
 
-## Stack
+Deploy directly to Vercel with zero configuration:
 
-- **Backend:** FastAPI, `pydub` for stitching audio, Sarvam AI SDK
-- **Frontend:** single-file HTML/CSS/JS, no build step
-- **Models:** `sarvam-105b` for the script, `bulbul:v3` for voices
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https%3A%2F%2Fgithub.com%2FSriRamkunamsetty%2FSarvam-Podcast-Generator)
+
+### Environment Variables required on Vercel:
+- `SARVAM_API_KEY`: Your Sarvam AI API key.

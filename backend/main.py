@@ -23,6 +23,13 @@ from pydantic import BaseModel, Field
 from pydub import AudioSegment
 from sarvamai import SarvamAI
 
+# Configure ffmpeg path dynamically for serverless environments (e.g., Vercel)
+try:
+    import imageio_ffmpeg
+    AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
+except Exception:
+    pass
+
 app = FastAPI(title="Podcast-from-README Generator")
 app.add_middleware(
     CORSMiddleware,
