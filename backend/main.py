@@ -101,15 +101,44 @@ def get_config():
 import re
 
 
-def extract_json_array(text: str) -> List[dict]:
+import re
+
+
+def extract_script(text: str) -> List[dict]:
     text = text.strip()
+    clean_text = text
     if "```" in text:
-        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
-        text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE).strip()
-    match = re.search(r"\[\s*\{.*\}\s*\]", text, re.DOTALL)
+        clean_text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
+        clean_text = re.sub(r"\s*```$", "", clean_text, flags=re.MULTILINE).strip()
+
+    # 1. Try finding JSON array
+    match = re.search(r"\[\s*\{.*\}\s*\]", clean_text, re.DOTALL)
     if match:
-        return json.loads(match.group(0))
-    return json.loads(text)
+        try:
+            return json.loads(match.group(0))
+        except Exception:
+            pass
+
+    # 2. Try parsing entire clean_text as JSON
+    try:
+        res = json.loads(clean_text)
+        if isinstance(res, list):
+            return res
+    except Exception:
+        pass
+
+    # 3. Fallback: Parse line-by-line dialogue format e.g. "A: ..." / "Host A: ..." / "B: ..."
+    lines = []
+    dialogue_matches = re.findall(r"^(?:Host\s+)?([AB])\s*[:\-]\s*(.+)$", text, re.MULTILINE | re.IGNORECASE)
+    for speaker, line in dialogue_matches:
+        cleaned_line = line.strip().strip('"').strip("'")
+        if cleaned_line:
+            lines.append({"speaker": speaker.upper(), "line": cleaned_line})
+
+    if lines:
+        return lines
+
+    raise ValueError(f"Could not parse valid script from LLM output. Raw snippet: {text[:250]}")
 
 
 def generate_script(readme_text: str, language_code: str, script_length: str) -> List[dict]:
@@ -133,7 +162,7 @@ def generate_script(readme_text: str, language_code: str, script_length: str) ->
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"README:\n\n{readme_text[:4000]}"},
             ],
-            max_tokens=1000,
+            max_tokens=2000,
         )
 
         choices = getattr(completion, "choices", [])
@@ -149,14 +178,21 @@ def generate_script(readme_text: str, language_code: str, script_length: str) ->
         if message is None:
             raise ValueError(f"No message object in choice. Choice data: {first_choice}")
 
+        # Extract content first
         raw = getattr(message, "content", None)
         if raw is None and isinstance(message, dict):
             raw = message.get("content")
 
+        # Fallback to reasoning_content for sarvam-105b reasoning outputs
+        if not raw:
+            raw = getattr(message, "reasoning_content", None)
+            if raw is None and isinstance(message, dict):
+                raw = message.get("reasoning_content")
+
         if not raw:
             raise ValueError(f"Sarvam AI chat response content is empty. Message object: {message}")
 
-        return extract_json_array(raw)
+        return extract_script(raw)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate podcast script: {str(e)}")
 
