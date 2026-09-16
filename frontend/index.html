@@ -295,6 +295,7 @@ Covers PM-KISAN, Ayushman Bharat, PMAY, MGNREGA, PM Ujjwala Yojana, and Sukanya 
       renderScript(data.script, data.host_a_voice, data.host_b_voice);
       const audioSrc = `data:audio/mp3;base64,${data.audio_base64}`;
       audioPlayer.src = audioSrc;
+      downloadBtn.style.display = 'inline-block';
       downloadBtn.onclick = () => {
         const a = document.createElement('a');
         a.href = audioSrc;
@@ -308,12 +309,13 @@ Covers PM-KISAN, Ayushman Bharat, PMAY, MGNREGA, PM Ujjwala Yojana, and Sukanya 
       await new Promise(r => setTimeout(r, 400));
       metaLine.innerHTML = `
         <span class="badge">Demo Mode</span>
-        <strong>${DEMO_SCRIPT.length} lines</strong> · Pre-written preview (backend offline: ${err.message})
+        <strong>${DEMO_SCRIPT.length} lines</strong> · Pre-written preview (${err.message})
       `;
       renderScript(DEMO_SCRIPT, hostASelect.value, hostBSelect.value);
       audioPlayer.style.display = 'none';
+      downloadBtn.style.display = 'none';
       demoNote.style.display = 'block';
-      demoNote.textContent = `Backend note: ${err.message}. Connect FastAPI server with your Sarvam key for live audio synthesis.`;
+      demoNote.textContent = `Backend Note: ${err.message}.`;
       downloadBtn.onclick = null;
       results.classList.add('active');
     } finally {
