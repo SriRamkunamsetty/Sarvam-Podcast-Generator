@@ -98,6 +98,20 @@ def get_config():
     }
 
 
+import re
+
+
+def extract_json_array(text: str) -> List[dict]:
+    text = text.strip()
+    if "```" in text:
+        text = re.sub(r"^```(?:json)?\s*", "", text, flags=re.MULTILINE)
+        text = re.sub(r"\s*```$", "", text, flags=re.MULTILINE).strip()
+    match = re.search(r"\[\s*\{.*\}\s*\]", text, re.DOTALL)
+    if match:
+        return json.loads(match.group(0))
+    return json.loads(text)
+
+
 def generate_script(readme_text: str, language_code: str, script_length: str) -> List[dict]:
     client = get_sarvam_client()
     lang_name = SUPPORTED_LANGUAGES.get(language_code, "English")
@@ -119,12 +133,30 @@ def generate_script(readme_text: str, language_code: str, script_length: str) ->
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": f"README:\n\n{readme_text[:4000]}"},
             ],
+            max_tokens=1000,
         )
-        raw = completion.choices[0].message.content.strip()
-        # Strip markdown fences if present
-        if "```" in raw:
-            raw = raw.replace("```json", "").replace("```", "").strip()
-        return json.loads(raw)
+
+        choices = getattr(completion, "choices", [])
+        if not choices and isinstance(completion, dict):
+            choices = completion.get("choices", [])
+
+        if not choices:
+            raise ValueError(f"No choices returned from Sarvam API. Full response: {completion}")
+
+        first_choice = choices[0]
+        message = getattr(first_choice, "message", first_choice.get("message") if isinstance(first_choice, dict) else None)
+
+        if message is None:
+            raise ValueError(f"No message object in choice. Choice data: {first_choice}")
+
+        raw = getattr(message, "content", None)
+        if raw is None and isinstance(message, dict):
+            raw = message.get("content")
+
+        if not raw:
+            raise ValueError(f"Sarvam AI chat response content is empty. Message object: {message}")
+
+        return extract_json_array(raw)
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to generate podcast script: {str(e)}")
 
