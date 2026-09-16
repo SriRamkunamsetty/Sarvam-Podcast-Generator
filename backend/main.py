@@ -53,15 +53,23 @@ SUPPORTED_LANGUAGES = {
 }
 
 SUPPORTED_VOICES = [
-    {"id": "anushka", "name": "Anushka (Female)", "gender": "Female"},
-    {"id": "karun", "name": "Karun (Male)", "gender": "Male"},
-    {"id": "meera", "name": "Meera (Female)", "gender": "Female"},
-    {"id": "arvind", "name": "Arvind (Male)", "gender": "Male"},
-    {"id": "pavithra", "name": "Pavithra (Female)", "gender": "Female"},
-    {"id": "hitesh", "name": "Hitesh (Male)", "gender": "Male"},
-    {"id": "vidya", "name": "Vidya (Female)", "gender": "Female"},
+    {"id": "priya", "name": "Priya (Female)", "gender": "Female"},
+    {"id": "tarun", "name": "Tarun (Male)", "gender": "Male"},
+    {"id": "neha", "name": "Neha (Female)", "gender": "Female"},
+    {"id": "rahul", "name": "Rahul (Male)", "gender": "Male"},
+    {"id": "pooja", "name": "Pooja (Female)", "gender": "Female"},
+    {"id": "rohan", "name": "Rohan (Male)", "gender": "Male"},
+    {"id": "simran", "name": "Simran (Female)", "gender": "Female"},
+    {"id": "kavya", "name": "Kavya (Female)", "gender": "Female"},
     {"id": "ratan", "name": "Ratan (Male)", "gender": "Male"},
+    {"id": "aditya", "name": "Aditya (Male)", "gender": "Male"},
+    {"id": "ishita", "name": "Ishita (Female)", "gender": "Female"},
+    {"id": "dev", "name": "Dev (Male)", "gender": "Male"},
+    {"id": "shreya", "name": "Shreya (Female)", "gender": "Female"},
+    {"id": "amit", "name": "Amit (Male)", "gender": "Male"},
 ]
+
+VALID_VOICE_IDS = {v["id"] for v in SUPPORTED_VOICES}
 
 LENGTH_PROMPTS = {
     "short": "about 30-45 seconds of total speaking time (roughly 4-6 short dialogue lines)",
@@ -83,8 +91,8 @@ def get_sarvam_client() -> SarvamAI:
 class PodcastRequest(BaseModel):
     readme_text: str = Field(..., description="Project README or text content")
     language_code: str = Field("en-IN", description="Language code for script & TTS")
-    host_a_voice: str = Field("anushka", description="Bulbul voice for Host A")
-    host_b_voice: str = Field("karun", description="Bulbul voice for Host B")
+    host_a_voice: str = Field("priya", description="Bulbul voice for Host A")
+    host_b_voice: str = Field("tarun", description="Bulbul voice for Host B")
     script_length: str = Field("medium", description="Length: short, medium, or long")
     gap_duration_ms: int = Field(250, description="Pause gap between speakers in ms (50-2000)")
 
@@ -222,6 +230,8 @@ def generate(req: PodcastRequest):
 
     lang_code = req.language_code if req.language_code in SUPPORTED_LANGUAGES else "en-IN"
     length = req.script_length if req.script_length in LENGTH_PROMPTS else "medium"
+    host_a = req.host_a_voice if req.host_a_voice in VALID_VOICE_IDS else "priya"
+    host_b = req.host_b_voice if req.host_b_voice in VALID_VOICE_IDS else "tarun"
 
     script = generate_script(req.readme_text, lang_code, length)
 
@@ -230,7 +240,7 @@ def generate(req: PodcastRequest):
     combined = AudioSegment.silent(duration=0)
 
     for turn in script:
-        voice = req.host_a_voice if turn.get("speaker") == "A" else req.host_b_voice
+        voice = host_a if turn.get("speaker") == "A" else host_b
         combined += line_to_audio(turn["line"], voice, lang_code) + gap
 
     buf = io.BytesIO()
@@ -242,7 +252,7 @@ def generate(req: PodcastRequest):
         "audio_base64": audio_b64,
         "duration_seconds": round(len(combined) / 1000, 1),
         "language_code": lang_code,
-        "host_a_voice": req.host_a_voice,
-        "host_b_voice": req.host_b_voice,
+        "host_a_voice": host_a,
+        "host_b_voice": host_b,
     }
 
