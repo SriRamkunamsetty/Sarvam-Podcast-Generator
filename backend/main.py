@@ -23,10 +23,12 @@ from pydantic import BaseModel, Field
 from pydub import AudioSegment
 from sarvamai import SarvamAI
 
-# Configure ffmpeg path dynamically for serverless environments (e.g., Vercel)
+# Configure ffmpeg and ffprobe paths dynamically for serverless environments (e.g., Vercel)
 try:
     import imageio_ffmpeg
-    AudioSegment.converter = imageio_ffmpeg.get_ffmpeg_exe()
+    ffmpeg_exe = imageio_ffmpeg.get_ffmpeg_exe()
+    AudioSegment.converter = ffmpeg_exe
+    AudioSegment.ffprobe = ffmpeg_exe
 except Exception:
     pass
 
@@ -215,7 +217,10 @@ def line_to_audio(line: str, speaker_voice: str, language_code: str) -> AudioSeg
             model="bulbul:v3",
         )
         raw_bytes = base64.b64decode(response.audios[0])
-        return AudioSegment.from_file(io.BytesIO(raw_bytes))
+        try:
+            return AudioSegment.from_wav(io.BytesIO(raw_bytes))
+        except Exception:
+            return AudioSegment.from_file(io.BytesIO(raw_bytes))
     except Exception as e:
         raise HTTPException(
             status_code=500,
