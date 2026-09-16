@@ -1,0 +1,23 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+.venv
+
+# Environment variables
+.env
+.env.local
+
+# Audio exports
+*.mp3
+*.wav
+
+# IDEs
+.vscode/
+.idea/
+.DS_Store
